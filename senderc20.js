@@ -24,10 +24,6 @@ const polygon_mumbai = "4251b6fd-c98d-4017-87a3-d691a77a52a7";
 const celo_alfajores = "d818afb9-df2f-4e46-963a-f7b6cb7655d2";
 var selected_network = polygon_mumbai; //Polygon Mumbai
 
-var SELECTED_WALLET = NCHAIN_WALLETS.results.filter(nchainwallets => nchainwallets.organizationId === ORG_ID );
-var TARGET_VAULT = SELECTED_WALLET[0].vaultId;
-
-
 //get the PRVD vault
 const VAULT_PROXY = new Vault(ACCESS_TOKEN.accessToken);
 const MY_VAULTS = await VAULT_PROXY.fetchVaults();
@@ -48,15 +44,16 @@ const MY_WALLET_ADDRESS = MY_WALLET[0].address;
 //console.log("sending ERC20s with wallet address:" + NFT_WALLET_ADDRESS );
 
 var cheesecake_contract_create = {};
-
+var selected_contract_address = "";
+var erc20Deployment;
 switch(selected_network) {
         case polygon_mumbai:
-                let erc20Deployment = JSON.parse(await readFile("./abi/CheesecakeUSD.json", "utf8"));
-                cheesecake_contract_create.address = "0xbB6496EBC15eE967bC81B5d9aa4748e708c98bE3"; //address of your ERC20 contract
+                erc20Deployment = JSON.parse(await readFile("./abi/CheesecakeUSD.json", "utf8"));
+                selected_contract_address = "0xbB6496EBC15eE967bC81B5d9aa4748e708c98bE3"; //address of your ERC20 contract
                 break;
         case celo_alfajores:
                 erc20Deployment = JSON.parse(await readFile("./abi/CheesecakeUSD.json", "utf8"));
-                cheesecake_contract_create.address = "0x55bD95969c9F5297688B6115f2b984e2daF0359e"; //address of your ERC20 contract
+                selected_contract_address  = "0x55bD95969c9F5297688B6115f2b984e2daF0359e"; //address of your ERC20 contract
                 break;
 }
 
@@ -75,6 +72,7 @@ if(targetcontract[0] != undefined) {
         let cheesecakeABI = erc20Deployment["abi"];
         cheesecake_contract_create.name = "CheesecakeUSD"; //name of the ERC20 contract
         cheesecake_contract_create.network_id = selected_network;
+        cheesecake_contract_create.address = selected_contract_address;
         cheesecake_contract_create.params = { argv: [],
                                wallet_id: MY_WALLET[0].id,
                                compiled_artifact: {
@@ -95,10 +93,15 @@ console.log(network_account);
 // who wants cheesecake??
 const DEFAULT_RECIPIENT = process.env.DEFAULT_RECIPIENT;
 
+//convert to dollars to ERC20 decimals (18)
+var cheesecake_dollars = 1;
+var erc20_decimals = 10**18;
+var total_chUSD = cheesecake_dollars * erc20_decimals;
+
 var execute_contract_by_account = {};
 execute_contract_by_account.account_id = network_account[0].id;
 execute_contract_by_account.method = 'transfer';
-execute_contract_by_account.params = [DEFAULT_RECIPIENT,100000];
+execute_contract_by_account.params = [DEFAULT_RECIPIENT,total_chUSD];
 execute_contract_by_account.value = 0;
 
 
